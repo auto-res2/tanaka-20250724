@@ -1,0 +1,17 @@
+{
+  "status_enum": "stopped",
+  "experiment_completed": true,
+  "device_used": "cuda",
+  "final_baseline_ppl": 1152.516912345268,
+  "final_dcq_ppl": 1015.0223207396511,
+  "lora_baseline_ppl": 210.09420843519314,
+  "lora_dcq_ppl": 351.53166122368214,
+  "federated_final_ppl": 1003.0684728221763,
+  "pdf_files_generated": [
+    "training_loss_dcq.pdf",
+    "bandwidth_vs_round.pdf",
+    "perplexity_vs_round.pdf"
+  ],
+  "timestamp": "2025-07-27",
+  "total_experiments": 3
+}

@@ -12,3 +12,185 @@ Trainables – DCQ     : 3,208,016
 Saved figure: .research/iteration1/images/training_loss_dcq.pdf
 
 ===== Experiment 2: LoRA Friendliness (toy) =====
+Testing adapter compatibility with DCQ compressed models...
+Setting up baseline model with LoRA adapters...
+Setting up DCQ compressed model with LoRA adapters...
+Fine-tuning LoRA-fp32 with LoRA adapters...
+  LoRA-fp32 epoch 1: train PPL=529.02
+  LoRA-fp32 epoch 2: train PPL=225.80
+  LoRA-fp32 final validation PPL: 206.87
+Fine-tuning LoRA-on-DCQ with LoRA adapters...
+  LoRA-on-DCQ epoch 1: train PPL=533.02
+  LoRA-on-DCQ epoch 2: train PPL=372.03
+  LoRA-on-DCQ final validation PPL: 359.47
+
+LoRA Compatibility Results:
+  LoRA-fp32   PPL: 206.87
+  LoRA-on-DCQ PPL: 359.47
+  Adapter overhead: 152.60 PPL
+
+===== Experiment 3: Federated Fine-Tuning Simulation (toy) =====
+Simulating federated learning with DCQ compressed base model...
+Federated setup: 20 clients, 16 token sequences
+Global LoRA parameters initialized: 2 tensors
+
+--- Federated Round 1/5 ---
+  Global PPL: 1004.88
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+--- Federated Round 2/5 ---
+  Global PPL: 1003.63
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+--- Federated Round 3/5 ---
+  Global PPL: 1003.43
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+--- Federated Round 4/5 ---
+  Global PPL: 1004.94
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+--- Federated Round 5/5 ---
+  Global PPL: 1003.07
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+Federated Learning Summary:
+  Total rounds: 5
+  Final global PPL: 1003.07
+  Average upload per client: 0.009 MB
+  Total bandwidth used: 0.90 MB
+  Bandwidth savings vs full model: 712.0x
+Saved high-quality figures: bandwidth_vs_round.pdf, perplexity_vs_round.pdf
+All tests passed ✔
+================================================================================
+DCQ (DIFFERENTIABLE CODEBOOK QUANTISATION) RESEARCH EXPERIMENT
+================================================================================
+Implementing bi-hierarchical codebooks with Gumbel-Sinkhorn relaxation
+for parameter-efficient neural network compression and federated learning
+================================================================================
+
+🔧 HARDWARE CONFIGURATION
+   Device: CUDA
+   GPU: Tesla T4
+   CUDA version: 12.6
+   GPU memory: 16.7 GB
+
+📁 SETUP
+   Created output directory: .research/iteration1/images/
+   Random seed: 42
+
+🚀 STARTING DCQ EXPERIMENTS
+   Three experiments will be conducted:
+   1. Parameter Gap Closure (baseline vs DCQ comparison)
+   2. LoRA Friendliness (adapter compatibility testing)
+   3. Federated Fine-tuning (bandwidth efficiency simulation)
+--------------------------------------------------------------------------------
+
+===== Experiment 1: Parameter-Gap Closure (toy) =====
+Baseline epoch 1: PPL=1127.86
+Baseline epoch 2: PPL=1128.68
+Baseline epoch 3: PPL=1152.52
+DCQ epoch 1: PPL=1004.76; tau=2.50
+DCQ epoch 2: PPL=1008.87; tau=1.25
+DCQ epoch 3: PPL=1015.02; tau=0.62
+Trainables – baseline: 257,000
+Trainables – DCQ     : 3,208,016
+Saved figure: .research/iteration1/images/training_loss_dcq.pdf
+
+===== Experiment 2: LoRA Friendliness (toy) =====
+Testing adapter compatibility with DCQ compressed models...
+Setting up baseline model with LoRA adapters...
+Setting up DCQ compressed model with LoRA adapters...
+Fine-tuning LoRA-fp32 with LoRA adapters...
+  LoRA-fp32 epoch 1: train PPL=511.08
+  LoRA-fp32 epoch 2: train PPL=225.59
+  LoRA-fp32 final validation PPL: 210.09
+Fine-tuning LoRA-on-DCQ with LoRA adapters...
+  LoRA-on-DCQ epoch 1: train PPL=519.67
+  LoRA-on-DCQ epoch 2: train PPL=353.94
+  LoRA-on-DCQ final validation PPL: 351.53
+
+LoRA Compatibility Results:
+  LoRA-fp32   PPL: 210.09
+  LoRA-on-DCQ PPL: 351.53
+  Adapter overhead: 141.44 PPL
+
+===== Experiment 3: Federated Fine-Tuning Simulation (toy) =====
+Simulating federated learning with DCQ compressed base model...
+Federated setup: 20 clients, 16 token sequences
+Global LoRA parameters initialized: 2 tensors
+
+--- Federated Round 1/5 ---
+  Global PPL: 1004.88
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+--- Federated Round 2/5 ---
+  Global PPL: 1003.63
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+--- Federated Round 3/5 ---
+  Global PPL: 1003.43
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+--- Federated Round 4/5 ---
+  Global PPL: 1004.94
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+--- Federated Round 5/5 ---
+  Global PPL: 1003.07
+  Round upload per client: 0.009 MB
+  Total round bandwidth: 0.18 MB
+
+Federated Learning Summary:
+  Total rounds: 5
+  Final global PPL: 1003.07
+  Average upload per client: 0.009 MB
+  Total bandwidth used: 0.90 MB
+  Bandwidth savings vs full model: 712.0x
+Saved high-quality figures: bandwidth_vs_round.pdf, perplexity_vs_round.pdf
+
+================================================================================
+📊 COMPREHENSIVE EXPERIMENT SUMMARY
+================================================================================
+🔧 Hardware Configuration:
+   Device used: CUDA
+   GPU utilization: Successful
+
+📈 Experiment 1 - Parameter Gap Closure:
+   Baseline (fp32) final PPL: 1152.52
+   DCQ compressed final PPL: 1015.02
+   PPL improvement: 137.49 (11.9%)
+
+🔗 Experiment 2 - LoRA Adapter Compatibility:
+   LoRA on fp32 baseline: 210.09 PPL
+   LoRA on DCQ compressed: 351.53 PPL
+   Adapter overhead: 141.44 PPL
+
+🌐 Experiment 3 - Federated Learning Simulation:
+   Federated rounds completed: 5
+   Final global PPL: 1003.07
+   Average upload per client: 0.009 MB
+   Total bandwidth saved: 712.0x vs full model
+
+📄 Generated Academic-Quality Plots:
+   1. training_loss_dcq.pdf
+   2. bandwidth_vs_round.pdf
+   3. perplexity_vs_round.pdf
+
+💾 Data Persistence:
+   Research history updated: .research/research_history.json
+   Status set to: STOPPED
+
+✅ EXPERIMENT PIPELINE COMPLETED SUCCESSFULLY!
+   All DCQ components verified: ✓ Codebooks ✓ LoRA ✓ Federated
+   Results saved in: .research/iteration1/images
+================================================================================
