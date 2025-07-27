@@ -4,10 +4,14 @@
   "device_used": "cpu",
   "final_baseline_ppl": 1148.8677610853476,
   "final_dcq_ppl": 1015.357412704335,
+  "lora_baseline_ppl": 208.19203110985285,
+  "lora_dcq_ppl": 369.05812470211765,
+  "federated_final_ppl": 1004.2472185639243,
   "pdf_files_generated": [
     "training_loss_dcq.pdf",
     "perplexity_vs_round.pdf",
     "bandwidth_vs_round.pdf"
   ],
-  "timestamp": "2025-07-27"
+  "timestamp": "2025-07-27",
+  "total_experiments": 3
 }

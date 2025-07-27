@@ -87,7 +87,9 @@ class LoRALinear(nn.Module):
 
     def forward(self, x):
         base_out = self.base(x)
-        lora_out = F.linear(x, self.B @ self.A) * self.scaling
+        A_device = self.A.to(x.device)
+        B_device = self.B.to(x.device)
+        lora_out = F.linear(x, B_device @ A_device) * self.scaling
         return base_out + lora_out
 
 def inject_lora(model: ToyLM, r: int = 4):

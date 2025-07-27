@@ -61,36 +61,51 @@ def experiment_1(device: str = "cpu") -> Dict[str, List[float]]:
 
     return {"ppl_fp": ppl_fp_hist, "ppl_dcq": ppl_dcq_hist}
 
-def experiment_2(device: str = "cpu") -> None:
+def experiment_2(device: str = "cpu") -> Dict[str, float]:
     """LoRA / adapter friendliness experiment."""
     print("\n===== Experiment 2: LoRA Friendliness (toy) =====")
+    print("Testing adapter compatibility with DCQ compressed models...")
+    
     train_ds, val_ds = get_synthetic_language_data(pattern="bursty")
     train_dl = DataLoader(train_ds, batch_size=64, shuffle=True)
     val_dl   = DataLoader(val_ds,   batch_size=64)
 
+    print("Setting up baseline model with LoRA adapters...")
     baseline = ToyLM(1000, 128, 256, dcq=False).to(device)
     baseline = inject_lora(baseline, r=4)
     optim_base = torch.optim.AdamW(filter(lambda p: p.requires_grad, baseline.parameters()), lr=3e-3)
 
+    print("Setting up DCQ compressed model with LoRA adapters...")
     dcq_model = ToyLM(1000, 128, 256, dcq=True).to(device)
     for p in dcq_model.parameters():
         p.requires_grad = False
     dcq_model = inject_lora(dcq_model, r=4)
     optim_dcq = torch.optim.AdamW(filter(lambda p: p.requires_grad, dcq_model.parameters()), lr=3e-3)
 
-    def finetune(model, opt):
-        for _ in range(2):
-            run_epoch(model, train_dl, opt, device=device)
-        return run_epoch(model, val_dl, device=device)
+    def finetune(model, opt, model_name):
+        print(f"Fine-tuning {model_name} with LoRA adapters...")
+        for epoch in range(2):
+            train_ppl = run_epoch(model, train_dl, opt, device=device)
+            print(f"  {model_name} epoch {epoch+1}: train PPL={train_ppl:.2f}")
+        val_ppl = run_epoch(model, val_dl, device=device)
+        print(f"  {model_name} final validation PPL: {val_ppl:.2f}")
+        return val_ppl
 
-    ppl_base = finetune(baseline, optim_base)
-    ppl_dcq  = finetune(dcq_model, optim_dcq)
-    print(f"LoRA-fp32   PPL={ppl_base:.2f}")
-    print(f"LoRA-on-DCQ PPL={ppl_dcq :.2f}")
+    ppl_base = finetune(baseline, optim_base, "LoRA-fp32")
+    ppl_dcq  = finetune(dcq_model, optim_dcq, "LoRA-on-DCQ")
+    
+    print(f"\nLoRA Compatibility Results:")
+    print(f"  LoRA-fp32   PPL: {ppl_base:.2f}")
+    print(f"  LoRA-on-DCQ PPL: {ppl_dcq:.2f}")
+    print(f"  Adapter overhead: {ppl_dcq - ppl_base:.2f} PPL")
+    
+    return {"ppl_base": ppl_base, "ppl_dcq": ppl_dcq}
 
-def experiment_3(device: str = "cpu") -> None:
+def experiment_3(device: str = "cpu") -> Dict[str, any]:
     """Federated fine-tuning simulation."""
     print("\n===== Experiment 3: Federated Fine-Tuning Simulation (toy) =====")
+    print("Simulating federated learning with DCQ compressed base model...")
+    
     base_model = ToyLM(1000, 128, 256, dcq=True).to(device)
     for p in base_model.parameters():
         p.requires_grad = False
@@ -99,11 +114,17 @@ def experiment_3(device: str = "cpu") -> None:
     n_clients = 20
     seq_len   = 16
     uploads, ppl_hist = [], []
+    
+    print(f"Federated setup: {n_clients} clients, {seq_len} token sequences")
 
     global_lora_state = {n: p.detach().clone() for n, p in base_model.named_parameters() if p.requires_grad}
+    print(f"Global LoRA parameters initialized: {len(global_lora_state)} tensors")
 
     for rnd in range(5):
+        print(f"\n--- Federated Round {rnd+1}/5 ---")
         deltas = []
+        round_uploads = []
+        
         for cid in range(n_clients):
             torch.manual_seed(cid + rnd * 100)
             x = torch.randint(0, 1000, (32, seq_len), dtype=torch.long).to(device)
@@ -119,9 +140,12 @@ def experiment_3(device: str = "cpu") -> None:
             delta = simulate_client_training(client_model, x, y)
             n_bytes = sum(v.numel() * 2 for v in delta.values())
             uploads.append(n_bytes / 1e6)
+            round_uploads.append(n_bytes / 1e6)
             deltas.append(delta)
+            
         for k in global_lora_state.keys():
             global_lora_state[k] = torch.stack([d[k] for d in deltas]).mean(0)
+            
         with torch.no_grad():
             test_x = torch.randint(0, 1000, (256, seq_len), dtype=torch.long).to(device)
             test_y = torch.randint(0, 1000, (256,),        dtype=torch.long).to(device)
@@ -136,25 +160,49 @@ def experiment_3(device: str = "cpu") -> None:
             test_y_seq = test_y.unsqueeze(1).repeat(1, test_x.size(1))  # (B, T)
             ppl = math.exp(F.cross_entropy(out.view(-1, out.size(-1)), test_y_seq.reshape(-1)).item())
             ppl_hist.append(ppl)
-            print(f"Round {rnd+1}: global PPL={ppl:.2f}, mean upload={np.mean(uploads[-n_clients:]):.2f} MB")
+            
+        avg_upload = np.mean(round_uploads)
+        total_upload = np.sum(round_uploads)
+        print(f"  Global PPL: {ppl:.2f}")
+        print(f"  Round upload per client: {avg_upload:.3f} MB")
+        print(f"  Total round bandwidth: {total_upload:.2f} MB")
 
-    plt.figure()
-    plt.plot(np.cumsum(uploads), label="Cumulative upload MB")
+    print(f"\nFederated Learning Summary:")
+    print(f"  Total rounds: {len(ppl_hist)}")
+    print(f"  Final global PPL: {ppl_hist[-1]:.2f}")
+    print(f"  Average upload per client: {np.mean(uploads):.3f} MB")
+    print(f"  Total bandwidth used: {np.sum(uploads):.2f} MB")
+    
+    full_model_params = sum(p.numel() for p in base_model.parameters()) * 2 / 1e6  # fp16 MB
+    bandwidth_savings = full_model_params / np.mean(uploads)
+    print(f"  Bandwidth savings vs full model: {bandwidth_savings:.1f}x")
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(np.cumsum(uploads), label="Cumulative upload MB", linewidth=2)
     plt.xlabel("Client uploads (sequential)")
-    plt.ylabel("MB")
-    plt.title("Federated traffic accumulation (toy)")
-    plt.savefig(".research/iteration1/images/bandwidth_vs_round.pdf", bbox_inches="tight")
+    plt.ylabel("Cumulative Bandwidth (MB)")
+    plt.title("Federated Learning: Cumulative Bandwidth Usage")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.savefig(".research/iteration1/images/bandwidth_vs_round.pdf", bbox_inches="tight", dpi=300)
     plt.close()
 
-    plt.figure()
-    plt.plot(ppl_hist, marker="o")
-    plt.xlabel("Federated round")
-    plt.ylabel("PPL")
-    plt.title("PPL vs round (toy FL)")
-    plt.savefig(".research/iteration1/images/perplexity_vs_round.pdf", bbox_inches="tight")
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, len(ppl_hist)+1), ppl_hist, marker="o", linewidth=2, markersize=8)
+    plt.xlabel("Federated Round")
+    plt.ylabel("Global Model Perplexity")
+    plt.title("Federated Learning: Global Model Performance")
+    plt.grid(True, alpha=0.3)
+    plt.savefig(".research/iteration1/images/perplexity_vs_round.pdf", bbox_inches="tight", dpi=300)
     plt.close()
 
-    print("Saved figures: bandwidth_vs_round.pdf, perplexity_vs_round.pdf")
+    print("Saved high-quality figures: bandwidth_vs_round.pdf, perplexity_vs_round.pdf")
+    
+    return {
+        "ppl_history": ppl_hist,
+        "avg_upload_mb": np.mean(uploads),
+        "bandwidth_savings": bandwidth_savings
+    }
 
 def simulate_client_training(model: ToyLM, data: torch.Tensor, target: torch.Tensor,  
                              lr: float = 1e-2, steps: int = 1) -> Dict[str, torch.Tensor]:
