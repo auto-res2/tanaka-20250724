@@ -1,0 +1,14 @@
+Running quick test on device: cuda
+
+===== Experiment 1: Parameter-Gap Closure (toy) =====
+Baseline epoch 1: PPL=1122.91
+Baseline epoch 2: PPL=1122.41
+Baseline epoch 3: PPL=1146.40
+DCQ epoch 1: PPL=1003.50; tau=2.50
+DCQ epoch 2: PPL=1008.29; tau=1.25
+DCQ epoch 3: PPL=1014.27; tau=0.62
+Trainables – baseline: 257,000
+Trainables – DCQ     : 3,208,016
+Saved figure: .research/iteration1/images/training_loss_dcq.pdf
+
+===== Experiment 2: LoRA Friendliness (toy) =====
